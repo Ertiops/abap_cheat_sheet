@@ -1,0 +1,8 @@
+FORM on_ctmenu_sub0130 USING p_menu TYPE REF TO cl_ctmenu.
+    CALL METHOD cl_ctmenu=>load_gui_status
+      EXPORTING
+        program = sy-cprog
+        status  = 'SUB0130'
+        menu    = p_menu.
+  
+  ENDFORM.
