@@ -1,0 +1,54 @@
+*----------------------------------------------------------------------*
+***INCLUDE ZBC410_ELIJAH_SOLUTION_MOVEO01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+
+MODULE move_to_dynp OUTPUT.
+  MOVE-CORRESPONDING gs_sflight TO sdyn_conn.
+ENDMODULE.
+
+
+MODULE status_0100 OUTPUT.
+  CALL METHOD lcl_screen_logic=>set_screen_pfstatus.
+ENDMODULE.
+
+MODULE status_0150 OUTPUT.
+  CALL METHOD lcl_screen_logic=>set_tim_screen_pfstatus.
+ENDMODULE.
+
+MODULE modify_screen OUTPUT.
+  CALL METHOD lcl_screen_logic=>modify_screen.
+ENDMODULE.
+
+MODULE fill_dynnr OUTPUT.
+  CALL METHOD lcl_screen_logic=>fill_dynnr.
+ENDMODULE.
+
+MODULE get_spfli OUTPUT.
+  ON CHANGE OF gs_sflight-carrid OR gs_sflight-connid.
+    CALL METHOD lcl_screen_logic=>get_spfli.
+  ENDON.
+ENDMODULE.
+
+MODULE get_saplane OUTPUT.
+ ON CHANGE OF gs_sflight-planetype.
+  CALL METHOD lcl_screen_logic=>get_saplane.
+ ENDON.
+ENDMODULE.
+
+MODULE get_sbook OUTPUT.
+  ON CHANGE OF gs_sflight-carrid
+    OR gs_sflight-connid
+    OR gs_sflight-fldate.
+    CALL METHOD lcl_screen_logic=>get_sbook.
+    my_table_control-lines = lines( gt_sdyn_book ).
+  ENDON.
+ENDMODULE.
+
+MODULE trans_to_tc OUTPUT.
+  MOVE gs_sdyn_book TO sdyn_book.
+ENDMODULE.
+
+MODULE modify_tc_line OUTPUT.
+  CALL METHOD lcl_screen_logic=>modify_tc_line.
+ENDMODULE.
