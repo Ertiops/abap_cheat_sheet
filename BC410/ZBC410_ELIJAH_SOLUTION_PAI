@@ -1,0 +1,31 @@
+*----------------------------------------------------------------------*
+***INCLUDE ZBC410_ELIJAH_SOLUTION_CHECI01.
+*----------------------------------------------------------------------*
+
+MODULE check_sflight INPUT.
+  CALL METHOD lcl_screen_logic=>check_sflight.
+ENDMODULE.
+
+MODULE user_command_0100 INPUT.
+  CALL METHOD lcl_screen_logic=>user_command_0100.
+ENDMODULE.
+
+MODULE user_command_0150 INPUT.
+  CALL METHOD lcl_screen_logic=>user_command_0150.
+ENDMODULE.
+
+MODULE exit INPUT.
+  CALL METHOD lcl_screen_logic=>exit.
+ENDMODULE.
+
+MODULE check_planetype INPUT.
+  CALL METHOD lcl_screen_logic=>check_planetype.
+ENDMODULE.
+
+MODULE trans_from_tc INPUT.
+  CALL METHOD lcl_screen_logic=>trans_from_tc.
+ENDMODULE.
+
+MODULE user_command_0130 INPUT.
+  CALL METHOD lcl_screen_logic=>user_command_0130.
+ENDMODULE.
