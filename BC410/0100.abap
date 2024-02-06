@@ -1,15 +1,14 @@
 PROCESS BEFORE OUTPUT.
   MODULE move_to_dynp.
   MODULE status_0100.
-  MODULE clear_ok_code.
   MODULE modify_screen.
   MODULE fill_dynnr.
 
-CALL SUBSCREEN sub INCLUDING sy-cprog dynnr.
+CALL SUBSCREEN gv_sub INCLUDING sy-cprog gv_dynnr.
 
 PROCESS AFTER INPUT.
   MODULE exit AT EXIT-COMMAND.
-   CALL SUBSCREEN sub.
+   CALL SUBSCREEN gv_sub.
     CHAIN.
       FIELD: sdyn_conn-carrid,
              sdyn_conn-connid,
