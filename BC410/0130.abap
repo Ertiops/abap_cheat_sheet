@@ -5,7 +5,7 @@ PROCESS BEFORE OUTPUT.
     my_table_control.
     MODULE trans_to_tc.
     MODULE modify_tc_line.
-  ENDLOOP.
+  ENDLOOP.  
 
 PROCESS AFTER INPUT.
 * MODULE USER_COMMAND_0130.
