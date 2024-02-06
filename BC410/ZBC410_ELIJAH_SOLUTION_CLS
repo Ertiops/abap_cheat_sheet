@@ -1,0 +1,248 @@
+*&---------------------------------------------------------------------*
+*& Include          ZBC410_ELIJAH_SOLUTION_CLS
+*&---------------------------------------------------------------------*
+
+
+CLASS lcl_screen_logic DEFINITION.
+PUBLIC SECTION.
+  CLASS-METHODS:
+    get_sflight,
+    get_parameter_ids,
+    set_screen_pfstatus,
+    set_tim_screen_pfstatus,
+    modify_screen,
+    fill_dynnr,
+    get_spfli,
+    get_saplane,
+    get_sbook,
+    modify_tc_line,
+    check_sflight,
+    user_command_0100,
+    user_command_0150,
+    exit,
+    check_planetype,
+    trans_from_tc,
+    user_command_0130,
+    select_rows,
+    deselect_rows,
+    sort_up,
+    sort_down.
+ENDCLASS.
+
+
+
+CLASS lcl_screen_logic IMPLEMENTATION.
+
+  METHOD get_parameter_ids.
+    GET PARAMETER ID:
+      'CAR' FIELD sdyn_conn-carrid,
+      'CON' FIELD sdyn_conn-connid,
+      'DAY' FIELD sdyn_conn-fldate.
+  ENDMETHOD.
+
+  METHOD get_sflight.
+    SELECT SINGLE * FROM sflight
+      INTO CORRESPONDING FIELDS OF sdyn_conn
+      WHERE carrid = sdyn_conn-carrid AND
+            connid = sdyn_conn-connid AND
+            fldate = sdyn_conn-fldate.
+  ENDMETHOD.
+
+  METHOD set_screen_pfstatus.
+    SET PF-STATUS 'STATUS100'.
+    CASE abap_true.
+      WHEN gv_view.
+        SET TITLEBAR 'TITLE_0100' WITH TEXT-vie.
+      WHEN gv_maintain_flights.
+        SET TITLEBAR 'TITLE_0100' WITH TEXT-fli.
+      WHEN gv_maintain_bookings.
+        SET TITLEBAR 'TITLE_0100' WITH TEXT-boo.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD set_tim_screen_pfstatus.
+    SET PF-STATUS 'STATUS_150'.
+    SET TITLEBAR 'TITLE_0150' WITH TEXT-tim.
+    syst-uzeit = sy-uzeit.
+  ENDMETHOD.
+
+  METHOD modify_screen.
+    IF gv_maintain_flights = abap_true.
+      SET PF-STATUS 'STATUS100'.
+      LOOP AT SCREEN.
+        IF screen-name = 'SDYN_CONN-PLANETYPE'.
+          screen-input = 1.
+          MODIFY SCREEN.
+        ENDIF.
+      ENDLOOP.
+    ELSE.
+      SET PF-STATUS 'STATUS100' EXCLUDING cv_save.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD fill_dynnr.
+    CASE my_tabstrip-activetab.
+      WHEN cv_fc1.
+        gv_dynnr = 110.
+      WHEN cv_fc2.
+        gv_dynnr = 120.
+      WHEN cv_fc3.
+        gv_dynnr = 130.
+      WHEN others.
+        my_tabstrip-activetab = cv_fc1.
+        gv_dynnr = 110.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD get_spfli.
+    SELECT SINGLE * INTO CORRESPONDING FIELDS OF sdyn_conn
+    FROM spfli WHERE carrid = gs_sflight-carrid AND connid = gs_sflight-connid.
+  ENDMETHOD.
+
+  METHOD get_saplane.
+    SELECT SINGLE * INTO CORRESPONDING FIELDS OF saplane
+      FROM saplane WHERE planetype = gs_sflight-planetype.
+  ENDMETHOD.
+
+  METHOD get_sbook.
+    SELECT * FROM sbook INTO CORRESPONDING FIELDS OF TABLE gt_sdyn_book
+      WHERE carrid = gs_sflight-carrid
+      AND connid = gs_sflight-connid
+      AND fldate = gs_sflight-fldate
+      AND cancelled = gv_not_cancelled.
+  ENDMETHOD.
+
+  METHOD modify_tc_line.
+    CHECK gs_sdyn_book-smoker = abap_true AND gv_smoker = abap_true.
+    LOOP AT SCREEN.
+      screen-intensified = 1.
+      MODIFY SCREEN.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD check_sflight.
+   SELECT SINGLE * FROM sflight
+    INTO gs_sflight
+    WHERE carrid = sdyn_conn-carrid
+    AND connid = sdyn_conn-connid
+    AND fldate = sdyn_conn-fldate.
+    CHECK sy-subrc <> 0.
+    CLEAR gs_sflight.
+    MESSAGE i007(zbc410_elijah).
+  ENDMETHOD.
+
+  METHOD user_command_0100.
+    CASE sy-ucomm.
+      WHEN cv_fc1 OR cv_fc2 OR cv_fc3.
+        my_tabstrip-activetab = sy-ucomm.
+      WHEN cv_back.
+        LEAVE TO SCREEN 0.
+      WHEN cv_time.
+        CALL SCREEN 150
+          STARTING AT 10 10
+          ENDING AT 50 20.
+      WHEN cv_cancel.
+        CLEAR sdyn_conn.
+        SET PARAMETER ID:
+          'CAR' FIELD sdyn_conn-carrid,
+          'CON' FIELD sdyn_conn-connid,
+          'DAY' FIELD sdyn_conn-fldate.
+        LEAVE TO SCREEN 100.
+      WHEN cv_exit.
+        LEAVE PROGRAM.
+      WHEN cv_save.
+        MOVE-CORRESPONDING sdyn_conn TO gs_sflight.
+        UPDATE sflight FROM gs_sflight.
+        IF sy-subrc <> 0.
+          MESSAGE a010(zbc410_elijah).
+        ENDIF.
+        MESSAGE a011(zbc410_elijah).
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD user_command_0150.
+    CASE sy-ucomm.
+      WHEN cv_back.
+        LEAVE TO SCREEN 0.
+      WHEN cv_okay.
+        LEAVE TO SCREEN 0.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD exit.
+    CASE sy-ucomm.
+      WHEN cv_cancel.
+        CLEAR sdyn_conn.
+        SET PARAMETER ID:
+          'CAR' FIELD sdyn_conn-carrid,
+          'CON' FIELD sdyn_conn-connid,
+          'DAY' FIELD sdyn_conn-fldate.
+        LEAVE TO SCREEN 100.
+      WHEN cv_exit.
+        LEAVE PROGRAM.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD check_planetype.
+    IF sdyn_conn-planetype IS INITIAL.
+      MESSAGE e008(zbc410_elijah).
+    ENDIF.
+
+    SELECT SINGLE seatsmax FROM saplane
+      INTO sdyn_conn-seatsmax WHERE planetype = sdyn_conn-planetype.
+
+    IF sdyn_conn-seatsocc > sdyn_conn-seatsmax.
+      MESSAGE e009(zbc410_elijah).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD trans_from_tc.
+    MOVE sdyn_book-mark TO gs_sdyn_book-mark.
+    MODIFY gt_sdyn_book INDEX my_table_control-current_line
+    FROM gs_sdyn_book TRANSPORTING mark.
+  ENDMETHOD.
+
+  METHOD user_command_0130.
+    CASE sy-ucomm.
+      WHEN cv_select.
+        CALL METHOD select_rows.
+      WHEN cv_deselect.
+        CALL METHOD deselect_rows.
+      WHEN cv_sortu.
+        CALL METHOD sort_up.
+      WHEN cv_sortd.
+        CALL METHOD sort_down.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD select_rows.
+    LOOP AT gt_sdyn_book INTO gs_sdyn_book
+      WHERE mark = space.
+      gs_sdyn_book-mark = abap_true.
+      MODIFY gt_sdyn_book FROM gs_sdyn_book TRANSPORTING mark.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD deselect_rows.
+    LOOP AT gt_sdyn_book INTO gs_sdyn_book
+      WHERE mark = abap_true.
+      gs_sdyn_book-mark = space.
+      MODIFY gt_sdyn_book FROM gs_sdyn_book TRANSPORTING mark.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD sort_up.
+    READ TABLE my_table_control-cols INTO gs_cols WITH KEY selected = abap_true.
+    IF sy-subrc = 0.
+      SORT gt_sdyn_book BY (gs_cols-screen-name+10) ASCENDING.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD sort_down.
+    READ TABLE my_table_control-cols INTO gs_cols WITH KEY selected = abap_true.
+    IF sy-subrc = 0.
+      SORT gt_sdyn_book BY (gs_cols-screen-name+10) DESCENDING.
+    ENDIF.
+  ENDMETHOD.
+
+ENDCLASS.
